@@ -2,21 +2,24 @@
 
 (function () {
   const $ = (id) => document.getElementById(id);
-  const engine = new GameEngine($('scene-container'));
 
-  // ---------- logging ----------
+  // ---------- fatal error surface ----------
   const logEl = $('log');
-  function log(msg) {
+  const consoleEl = $('console');
+  function log(msg, isErr) {
     const line = document.createElement('div');
+    if (isErr) line.className = 'err';
     line.textContent = '> ' + msg;
     logEl.appendChild(line);
     logEl.scrollTop = logEl.scrollHeight;
+    if (isErr) consoleEl.classList.add('open');
   }
-  engine.onLog = log;
-  window.addEventListener('error', (e) => log('[error] ' + e.message));
-  window.addEventListener('unhandledrejection', (e) => log('[error] ' + (e.reason && e.reason.message || e.reason)));
+  window.addEventListener('error', (e) => log('[error] ' + e.message, true));
+  window.addEventListener('unhandledrejection', (e) => log('[error] ' + (e.reason && e.reason.message || e.reason), true));
 
-  // ---------- blueprint graph ----------
+  // ---------- engine + blueprint graph ----------
+  const engine = new GameEngine($('scene-container'));
+  engine.onLog = log;
   const graph = new NodeEditor($('graphDiv'));
   graph.objectNames = () => engine.objects.map((o) => o.name);
   graph.onChange = () => {};
@@ -25,44 +28,67 @@
   const STORE = 'webstruckd-projects';
   const CURRENT = 'webstruckd-current';
   const scriptInput = $('script-input');
-  const projectSelect = $('project-select');
+  const projectNameInput = $('project-name');
+  const sideProjects = $('side-projects');
   let currentName = null;
 
   function sceneJSON() { return engine.objects.map((o) => o.toJSON()); }
   function currentProgram() { return graph.toCode() + '\n\n' + scriptInput.value; }
 
+  function allProjects() { return JSON.parse(localStorage.getItem(STORE) || '{}'); }
+
   function saveCurrent() {
     if (!currentName) return;
-    const projects = JSON.parse(localStorage.getItem(STORE) || '{}');
+    const projects = allProjects();
     projects[currentName] = { graph: graph.toJSON(), script: scriptInput.value, scene: sceneJSON() };
     localStorage.setItem(STORE, JSON.stringify(projects));
     localStorage.setItem(CURRENT, currentName);
-    refreshProjectSelect();
+    refreshProjects();
     log('Saved "' + currentName + '"');
   }
 
   function loadProject(name) {
-    const projects = JSON.parse(localStorage.getItem(STORE) || '{}');
-    const p = projects[name];
+    const p = allProjects()[name];
     if (!p) return;
     engine.clear();
     for (const d of p.scene) engine.spawn(d);
     scriptInput.value = p.script || '';
     graph.loadJSON(p.graph);
     currentName = name;
+    projectNameInput.value = name;
     localStorage.setItem(CURRENT, name);
+    refreshProjects();
     log('Loaded "' + name + '"');
   }
 
-  function refreshProjectSelect() {
-    const projects = JSON.parse(localStorage.getItem(STORE) || '{}');
-    projectSelect.innerHTML = '';
-    for (const name of Object.keys(projects)) {
-      const opt = document.createElement('option');
-      opt.value = opt.textContent = name;
-      projectSelect.appendChild(opt);
+  function refreshProjects() {
+    sideProjects.innerHTML = '';
+    for (const name of Object.keys(allProjects())) {
+      const row = document.createElement('div');
+      row.className = 'proj' + (name === currentName ? ' active' : '');
+      const btn = document.createElement('button');
+      btn.className = 'proj-name';
+      btn.textContent = name;
+      btn.onclick = () => loadProject(name);
+      const del = document.createElement('button');
+      del.className = 'proj-del';
+      del.textContent = '\u00d7';
+      del.title = 'Delete project';
+      del.onclick = (e) => {
+        e.stopPropagation();
+        if (!confirm('Delete "' + name + '"?')) return;
+        const projects = allProjects();
+        delete projects[name];
+        localStorage.setItem(STORE, JSON.stringify(projects));
+        if (name === currentName) {
+          localStorage.removeItem(CURRENT);
+          newProject();
+        } else refreshProjects();
+      };
+      row.appendChild(btn);
+      row.appendChild(del);
+      sideProjects.appendChild(row);
     }
-    if (currentName) projectSelect.value = currentName;
   }
 
   function newProject() {
@@ -70,21 +96,35 @@
     scriptInput.value = '';
     graph.clear();
     currentName = 'Untitled';
-    refreshProjectSelect();
+    projectNameInput.value = 'Untitled';
+    refreshProjects();
     log('New project');
   }
 
   $('btn-save').onclick = saveCurrent;
   $('btn-new').onclick = () => { if (confirm('Start a new project? Unsaved changes are lost.')) newProject(); };
-  $('btn-delete').onclick = () => {
-    if (!currentName || !confirm('Delete "' + currentName + '"?')) return;
-    const projects = JSON.parse(localStorage.getItem(STORE) || '{}');
-    delete projects[currentName];
+  projectNameInput.onchange = () => {
+    const name = projectNameInput.value.trim() || 'Untitled';
+    if (name === currentName) return;
+    const projects = allProjects();
+    if (currentName && projects[currentName]) {
+      projects[name] = projects[currentName];
+      delete projects[currentName];
+    }
     localStorage.setItem(STORE, JSON.stringify(projects));
-    localStorage.removeItem(CURRENT);
-    newProject();
+    currentName = name;
+    localStorage.setItem(CURRENT, name);
+    refreshProjects();
   };
-  projectSelect.onchange = () => loadProject(projectSelect.value);
+
+  // ---------- navigation ----------
+  const navBtns = document.querySelectorAll('.nav-btn');
+  function switchTab(tab) {
+    for (const b of navBtns) b.classList.toggle('active', b.dataset.tab === tab);
+    for (const p of document.querySelectorAll('.panel')) p.classList.toggle('active', p.id === 'panel-' + tab);
+    engine.resize();
+  }
+  for (const b of navBtns) b.onclick = () => switchTab(b.dataset.tab);
 
   // ---------- scene inspector ----------
   const objListEl = $('obj-list');
@@ -92,10 +132,7 @@
   const propsTitle = $('props-title');
   let selected = null;
 
-  engine.onSceneChange = () => {
-    renderObjectList();
-    renderProps();
-  };
+  engine.onSceneChange = () => { renderObjectList(); renderProps(); };
 
   function renderObjectList() {
     objListEl.innerHTML = '';
@@ -106,7 +143,10 @@
       sw.className = 'swatch';
       sw.style.background = o.color;
       b.appendChild(sw);
-      b.appendChild(document.createTextNode(o.name));
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = o.name;
+      b.appendChild(name);
       const badge = document.createElement('span');
       badge.className = 'type-badge';
       badge.textContent = o.type;
@@ -117,7 +157,7 @@
     if (!engine.objects.length) {
       const empty = document.createElement('div');
       empty.className = 'empty-state';
-      empty.textContent = 'No objects yet. Add one, or spawn them from the Blueprint graph.';
+      empty.textContent = 'No objects yet. Add one above, or spawn from the Blueprint graph.';
       objListEl.appendChild(empty);
     }
   }
@@ -133,7 +173,7 @@
     propsTitle.classList.toggle('hidden', !selected);
     if (!selected) return;
     const g1 = document.createElement('div');
-    g1.className = 'group'; g1.textContent = 'Position / Rotation / Scale';
+    g1.className = 'group'; g1.textContent = 'Transform';
     propsEl.appendChild(g1);
     for (const [prop, label] of PROP_FIELDS) {
       const lab = document.createElement('span');
@@ -213,16 +253,6 @@
     });
   })();
 
-  // ---------- tabs ----------
-  const tabs = document.querySelectorAll('.tab');
-  for (const tab of tabs) {
-    tab.onclick = () => {
-      for (const t of tabs) t.classList.toggle('active', t === tab);
-      for (const p of document.querySelectorAll('.panel')) p.classList.toggle('active', p.id === 'panel-' + tab.dataset.tab);
-      engine.resize();
-    };
-  }
-
   // ---------- play / stop ----------
   $('btn-play').onclick = () => {
     saveCurrent();
@@ -232,11 +262,10 @@
   $('btn-stop').onclick = () => { engine.stop(); log('Stopped'); };
   $('btn-run-script').onclick = () => {
     try { new Function('game', scriptInput.value)(engine.api); log('Script ran'); }
-    catch (e) { log('[error] ' + (e.message || e)); }
+    catch (e) { log('[error] ' + (e.message || e), true); }
   };
 
   // ---------- console drawer ----------
-  const consoleEl = $('console');
   $('btn-console').onclick = () => consoleEl.classList.toggle('open');
 
   // ---------- MCP bridge ----------
@@ -253,7 +282,7 @@
   scriptInput.oninput = () => localStorage.setItem('webstruckd-script', scriptInput.value);
 
   const savedName = localStorage.getItem(CURRENT);
-  const projects = JSON.parse(localStorage.getItem(STORE) || '{}');
+  const projects = allProjects();
   if (savedName && projects[savedName]) loadProject(savedName);
   else newProject();
 
@@ -261,6 +290,7 @@
     engine: engine,
     graph: graph,
     currentProgram: currentProgram,
-    loadGraph: (json) => graph.loadJSON(json)
+    loadGraph: (json) => graph.loadJSON(json),
+    switchTab: switchTab
   };
 })();

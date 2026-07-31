@@ -14,8 +14,9 @@ function initBridge(engine, statusEl) {
 
   function setStatus(text, on) {
     if (!statusEl) return;
-    statusEl.textContent = text;
     statusEl.classList.toggle('on', !!on);
+    const textSpan = statusEl.querySelector('.status-text');
+    if (textSpan) textSpan.textContent = text;
   }
 
   function connect() {
