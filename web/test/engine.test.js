@@ -19,6 +19,8 @@ global.THREE = {
   GridHelper: class { constructor() { this.position = Vec(); } },
   OrbitControls: class { constructor() { this.enableDamping = true; this.update = function () {}; } },
   Color: class { constructor(c) { this.c = c; } },
+  Vector2: class { constructor(x, y) { this.x = x; this.y = y; } },
+  Raycaster: class { constructor() { this.objects = []; } setFromCamera() {} intersectObjects() { return []; } },
   Clock: class { getDelta() { return 0.016; } }
 };
 global.window = { addEventListener: function () {}, devicePixelRatio: 1 };

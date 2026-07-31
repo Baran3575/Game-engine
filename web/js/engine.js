@@ -34,6 +34,7 @@ class GameEngine {
 
     this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
+    this.raycaster = new THREE.Raycaster();
 
     this.objects = [];
     this.byName = {};
@@ -84,6 +85,7 @@ class GameEngine {
       spawn: null,
       _mesh: this._buildMesh(d.type || 'box', d.color || '#ff4444')
     };
+    o._mesh._gameObj = o;
     o.spawn = { x: o.x, y: o.y, z: o.z, rx: o.rx, ry: o.ry, rz: o.rz, sx: o.sx, sy: o.sy, sz: o.sz };
     o.destroy = () => this._remove(o);
     o.move = (dx, dy, dz) => { o.x += dx; o.y += dy; o.z += dz; };
@@ -136,6 +138,17 @@ class GameEngine {
   }
 
   // ---------- input ----------
+
+  pick(clientX, clientY) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
+    );
+    this.raycaster.setFromCamera(ndc, this.camera);
+    const hit = this.raycaster.intersectObjects(this.objects.map((o) => o._mesh));
+    return hit.length ? hit[0].object._gameObj : null;
+  }
 
   _bindInput() {
     window.addEventListener('keydown', (e) => {

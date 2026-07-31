@@ -20,11 +20,12 @@
   const blocks = setupBlocks(engine);
   const workspace = Blockly.inject($('blocklyDiv'), {
     toolbox: gameToolbox(),
+    theme: gameTheme,
     media: 'https://cdn.jsdelivr.net/npm/blockly@9.3.3/media/',
     trashcan: true,
     scrollbars: true,
     zoom: { controls: true, wheel: true },
-    grid: { spacing: 20, length: 3, colour: '#3a3c44', snap: true }
+    grid: { spacing: 20, length: 3, colour: '#2a2c33', snap: true }
   });
   blocks.setWorkspace(workspace);
   const blocksToCode = blocks.blocksToCode;
@@ -187,6 +188,23 @@
     renderObjectList();
     renderProps();
   }
+
+  // click an object in the 3D view to select it
+  (function wirePick() {
+    const canvas = engine.renderer.domElement;
+    let down = null;
+    canvas.addEventListener('pointerdown', (e) => { down = [e.clientX, e.clientY]; });
+    canvas.addEventListener('pointerup', (e) => {
+      if (!down) return;
+      const dist = Math.hypot(e.clientX - down[0], e.clientY - down[1]);
+      down = null;
+      if (dist > 6) return;
+      const o = engine.pick(e.clientX, e.clientY);
+      selected = o;
+      renderObjectList();
+      renderProps();
+    });
+  })();
   $('add-box').onclick = () => addObject('box');
   $('add-sphere').onclick = () => addObject('sphere');
   $('add-cylinder').onclick = () => addObject('cylinder');
