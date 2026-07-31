@@ -1,11 +1,12 @@
 # Game Engine Studio
 
 A Struckd-style 3D game builder for the web — build a scene by placing blocks,
-program it with drag-and-drop **block code** or plain **JavaScript scripts**,
-press Play, and let AI agents drive it live over **MCP**.
+program it with a custom **Blueprint-style node graph** (Unreal/Struckd vibe) or
+plain **JavaScript scripts**, press Play, and let AI agents drive it live over
+**MCP**.
 
-No build step, no backend. The app is a static site (Three.js + Blockly from
-CDN) and is deployed to GitHub Pages.
+No build step, no backend. The app is a static site (Three.js, zero framework)
+and is deployed to GitHub Pages.
 
 - **Play it:** `https://baran3575.github.io/Game-engine/`
 - **Code:** `web/` (the browser app), `mcp/` (the MCP server)
@@ -13,14 +14,16 @@ CDN) and is deployed to GitHub Pages.
 ## Features
 
 - **Scene editor** — add/move box, sphere and cylinder objects; edit position,
-  rotation, scale, color and name. Drag to orbit, scroll to zoom.
-- **Block code** — Scratch-style blocks: *when game starts*, *when key pressed*,
-  move/rotate/scale, spawn/destroy, set color, broadcast events, repeat and
-  forever loops. Blocks compile to JavaScript that drives the same `game` API
-  as scripts.
+  rotation, scale, color and name. Click an object in the 3D view to select it.
+- **Blueprint graph** — a custom node editor (no Blockly): drag nodes from the
+  palette, wire output ports to inputs, pan/zoom the canvas. *On Game Start*,
+  *On Key Pressed*, *On Event Received*; move/rotate/scale, spawn/destroy, set
+  color/velocity, broadcast; repeat/forever/if with compare logic. The graph
+  compiles to the same `game` API as scripts. Double-click empty space to drop
+  a Move node; press Delete to remove the selection.
 - **Scripts** — a plain-JS editor with the engine API: `game.spawn`, `game.find`,
   `game.onKey`, `game.on('touch')`, `game.broadcast`, `game.wait`, ... Scripts
-  run together with block code on Play.
+  run together with the graph on Play.
 - **Projects** — save/load multiple games in your browser (localStorage).
 - **MCP bridge** — connect an AI agent to the running game. Spawn objects, move
   them, run scripts, read the scene — live.
@@ -68,6 +71,7 @@ Runs automatically in GitHub Actions (`.github/workflows/test.yml`), or locally:
 
 ```bash
 node web/test/engine.test.js   # engine core: physics, collisions, API, MCP remote
+node web/test/graph.test.js    # Blueprint graph compiler: chains, wires, control flow
 cd mcp && npm ci && npm test   # MCP stdio protocol handshake + tools
 ```
 

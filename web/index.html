@@ -12,22 +12,34 @@
 <body>
 <header id="toolbar">
   <span class="brand"><span class="logo">&#9673;</span>Game Engine Studio</span>
-  <button id="btn-play" class="accent">&#9654; Play</button>
-  <button id="btn-stop">&#9632; Stop</button>
+  <div class="seg">
+    <button id="btn-play" class="accent">&#9654; Play</button>
+    <button id="btn-stop">&#9632;</button>
+  </div>
   <span class="sep"></span>
   <button id="btn-save">Save</button>
   <select id="project-select" title="Projects"></select>
   <button id="btn-new">New</button>
-  <button id="btn-delete">Delete</button>
+  <button id="btn-delete" title="Delete current project">&#128465;</button>
   <span class="spacer"></span>
-  <span id="bridge-status" class="status">MCP: offline</span>
-  <button id="btn-bridge-settings" title="MCP bridge settings">&#9881;</button>
+  <button id="btn-console" class="ghost" title="Toggle console">&#9776;</button>
+  <span id="bridge-status" class="status"><span class="dot"></span>MCP: offline</span>
+  <button id="btn-bridge-settings" class="icon-btn" title="MCP bridge settings">&#9881;</button>
 </header>
 
 <nav id="tabs">
-  <button class="tab active" data-tab="scene">Scene</button>
-  <button class="tab" data-tab="blocks">Block Code</button>
-  <button class="tab" data-tab="scripts">Scripts</button>
+  <button class="tab active" data-tab="scene">
+    <svg viewBox="0 0 16 16"><path d="M8 1.5 14 4.8v6.4L8 14.5 2 11.2V4.8L8 1.5z"/><path d="M2 4.8 8 8l6-3.2M8 8v6.5"/></svg>
+    <span>Scene</span>
+  </button>
+  <button class="tab" data-tab="graph">
+    <svg viewBox="0 0 16 16"><circle cx="3.5" cy="12.5" r="1.8"/><circle cx="12.5" cy="3.5" r="1.8"/><circle cx="12.5" cy="12.5" r="1.8"/><path d="M5.2 11.5 10.8 4.5M12.5 5.4v5.2"/></svg>
+    <span>Blueprint</span>
+  </button>
+  <button class="tab" data-tab="scripts">
+    <svg viewBox="0 0 16 16"><path d="M9.5 2.5 4 8l5.5 5.5M6.5 2.5 12 8l-5.5 5.5"/></svg>
+    <span>Scripts</span>
+  </button>
 </nav>
 
 <main>
@@ -48,33 +60,31 @@
       <div id="props"></div>
     </aside>
     <div id="scene-container">
-      <div id="hint">Drag to orbit &middot; scroll to zoom &middot; right-drag to pan</div>
+      <div id="hint">Drag to orbit &middot; scroll to zoom &middot; right-drag to pan &middot; click an object to select</div>
     </div>
   </section>
 
-  <section id="panel-blocks" class="panel">
-    <div id="blocklyDiv"></div>
+  <section id="panel-graph" class="panel">
+    <div id="graphDiv"></div>
   </section>
 
   <section id="panel-scripts" class="panel">
     <div class="script-bar">
       <button id="btn-run-script">Run Script (now)</button>
-      <span>Scripts run together with block code when you press Play.</span>
+      <span>Scripts run together with the Blueprint graph when you press Play.</span>
     </div>
     <textarea id="script-input" spellcheck="false" autocomplete="off"></textarea>
   </section>
 </main>
 
-<div id="log"></div>
+<footer id="console">
+  <div id="log"></div>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/blockly@9.3.3/blockly.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/blockly@9.3.3/blocks_compressed.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/blockly@9.3.3/javascript_compressed.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/blockly@9.3.3/msg/en.js"></script>
 <script src="js/engine.js"></script>
-<script src="js/blocks.js"></script>
+<script src="js/graph.js"></script>
 <script src="js/bridge.js"></script>
 <script src="js/app.js"></script>
 </body>

@@ -16,19 +16,10 @@
   window.addEventListener('error', (e) => log('[error] ' + e.message));
   window.addEventListener('unhandledrejection', (e) => log('[error] ' + (e.reason && e.reason.message || e.reason)));
 
-  // ---------- blocks ----------
-  const blocks = setupBlocks(engine);
-  const workspace = Blockly.inject($('blocklyDiv'), {
-    toolbox: gameToolbox(),
-    theme: gameTheme,
-    media: 'https://cdn.jsdelivr.net/npm/blockly@9.3.3/media/',
-    trashcan: true,
-    scrollbars: true,
-    zoom: { controls: true, wheel: true },
-    grid: { spacing: 20, length: 3, colour: '#2a2c33', snap: true }
-  });
-  blocks.setWorkspace(workspace);
-  const blocksToCode = blocks.blocksToCode;
+  // ---------- blueprint graph ----------
+  const graph = new NodeEditor($('graphDiv'));
+  graph.objectNames = () => engine.objects.map((o) => o.name);
+  graph.onChange = () => {};
 
   // ---------- project state ----------
   const STORE = 'webstruckd-projects';
@@ -38,16 +29,12 @@
   let currentName = null;
 
   function sceneJSON() { return engine.objects.map((o) => o.toJSON()); }
-  function currentProgram() { return blocksToCode() + '\n\n' + scriptInput.value; }
+  function currentProgram() { return graph.toCode() + '\n\n' + scriptInput.value; }
 
   function saveCurrent() {
     if (!currentName) return;
     const projects = JSON.parse(localStorage.getItem(STORE) || '{}');
-    projects[currentName] = {
-      blocks: Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace)),
-      script: scriptInput.value,
-      scene: sceneJSON()
-    };
+    projects[currentName] = { graph: graph.toJSON(), script: scriptInput.value, scene: sceneJSON() };
     localStorage.setItem(STORE, JSON.stringify(projects));
     localStorage.setItem(CURRENT, currentName);
     refreshProjectSelect();
@@ -61,8 +48,7 @@
     engine.clear();
     for (const d of p.scene) engine.spawn(d);
     scriptInput.value = p.script || '';
-    workspace.clear();
-    if (p.blocks) Blockly.Xml.domToWorkspace(Blockly.Xml.textToDom(p.blocks), workspace);
+    graph.loadJSON(p.graph);
     currentName = name;
     localStorage.setItem(CURRENT, name);
     log('Loaded "' + name + '"');
@@ -82,7 +68,7 @@
   function newProject() {
     engine.clear();
     scriptInput.value = '';
-    workspace.clear();
+    graph.clear();
     currentName = 'Untitled';
     refreshProjectSelect();
     log('New project');
@@ -120,15 +106,18 @@
       sw.className = 'swatch';
       sw.style.background = o.color;
       b.appendChild(sw);
-      b.appendChild(document.createTextNode(o.name + '  (' + o.type + ')'));
+      b.appendChild(document.createTextNode(o.name));
+      const badge = document.createElement('span');
+      badge.className = 'type-badge';
+      badge.textContent = o.type;
+      b.appendChild(badge);
       b.onclick = () => { selected = o; renderObjectList(); renderProps(); };
       objListEl.appendChild(b);
     }
     if (!engine.objects.length) {
       const empty = document.createElement('div');
-      empty.textContent = 'No objects yet - add one below.';
-      empty.style.color = 'var(--muted)';
-      empty.style.fontSize = '12px';
+      empty.className = 'empty-state';
+      empty.textContent = 'No objects yet. Add one, or spawn them from the Blueprint graph.';
       objListEl.appendChild(empty);
     }
   }
@@ -143,6 +132,9 @@
     propsEl.innerHTML = '';
     propsTitle.classList.toggle('hidden', !selected);
     if (!selected) return;
+    const g1 = document.createElement('div');
+    g1.className = 'group'; g1.textContent = 'Position / Rotation / Scale';
+    propsEl.appendChild(g1);
     for (const [prop, label] of PROP_FIELDS) {
       const lab = document.createElement('span');
       lab.className = 'label';
@@ -155,6 +147,9 @@
       propsEl.appendChild(lab);
       propsEl.appendChild(input);
     }
+    const g2 = document.createElement('div');
+    g2.className = 'group'; g2.textContent = 'Appearance';
+    propsEl.appendChild(g2);
     const labColor = document.createElement('span');
     labColor.className = 'label';
     labColor.textContent = 'Color';
@@ -188,6 +183,18 @@
     renderObjectList();
     renderProps();
   }
+  $('add-box').onclick = () => addObject('box');
+  $('add-sphere').onclick = () => addObject('sphere');
+  $('add-cylinder').onclick = () => addObject('cylinder');
+  $('btn-dup').onclick = () => {
+    if (!selected) return;
+    const d = selected.toJSON();
+    d.x += 1.5;
+    d.name += '-copy';
+    engine.spawn(d);
+    renderObjectList();
+  };
+  $('btn-del').onclick = () => { if (selected) { selected.destroy(); selected = null; renderObjectList(); renderProps(); } };
 
   // click an object in the 3D view to select it
   (function wirePick() {
@@ -205,18 +212,6 @@
       renderProps();
     });
   })();
-  $('add-box').onclick = () => addObject('box');
-  $('add-sphere').onclick = () => addObject('sphere');
-  $('add-cylinder').onclick = () => addObject('cylinder');
-  $('btn-dup').onclick = () => {
-    if (!selected) return;
-    const d = selected.toJSON();
-    d.x += 1.5;
-    d.name += '-copy';
-    engine.spawn(d);
-    renderObjectList();
-  };
-  $('btn-del').onclick = () => { if (selected) { selected.destroy(); selected = null; renderObjectList(); renderProps(); } };
 
   // ---------- tabs ----------
   const tabs = document.querySelectorAll('.tab');
@@ -224,10 +219,7 @@
     tab.onclick = () => {
       for (const t of tabs) t.classList.toggle('active', t === tab);
       for (const p of document.querySelectorAll('.panel')) p.classList.toggle('active', p.id === 'panel-' + tab.dataset.tab);
-      if (tab.dataset.tab === 'blocks') {
-        engine.resize();
-        Blockly.svgResize(workspace);
-      } else engine.resize();
+      engine.resize();
     };
   }
 
@@ -243,6 +235,10 @@
     catch (e) { log('[error] ' + (e.message || e)); }
   };
 
+  // ---------- console drawer ----------
+  const consoleEl = $('console');
+  $('btn-console').onclick = () => consoleEl.classList.toggle('open');
+
   // ---------- MCP bridge ----------
   initBridge(engine, $('bridge-status'));
   $('btn-bridge-settings').onclick = () => {
@@ -253,7 +249,7 @@
   };
 
   // ---------- defaults / boot ----------
-  scriptInput.value = localStorage.getItem('webstruckd-script') || '// Scripts run on Play, together with your block code.\n// `game` is your engine API.\n\ngame.onStart(function () {\n  game.log("Game started!");\n});\n\ngame.onKey("Space", function () {\n  const p = game.find("this");\n  if (p) p.velocity.y = 8;\n});\n\ngame.on("touch", function (a, b) {\n  game.log(a.name + " touched " + b.name);\n});\n';
+  scriptInput.value = localStorage.getItem('webstruckd-script') || '// Scripts run on Play, together with your Blueprint graph.\n// `game` is your engine API.\n\ngame.onStart(function () {\n  game.log("Game started!");\n});\n\ngame.onKey("Space", function () {\n  const p = game.find("this");\n  if (p) p.velocity.y = 8;\n});\n\ngame.on("touch", function (a, b) {\n  game.log(a.name + " touched " + b.name);\n});\n';
   scriptInput.oninput = () => localStorage.setItem('webstruckd-script', scriptInput.value);
 
   const savedName = localStorage.getItem(CURRENT);
@@ -263,10 +259,8 @@
 
   window.app = {
     engine: engine,
+    graph: graph,
     currentProgram: currentProgram,
-    loadBlocksXml: (xml) => {
-      workspace.clear();
-      Blockly.Xml.domToWorkspace(Blockly.Xml.textToDom(xml), workspace);
-    }
+    loadGraph: (json) => graph.loadJSON(json)
   };
 })();

@@ -15,8 +15,8 @@ jobs:
           node-version: 22
       - name: Engine tests
         run: node web/test/engine.test.js
-      - name: Blocks tests
-        run: node web/test/blocks.test.js
+      - name: Blueprint graph tests
+        run: node web/test/graph.test.js
       - name: MCP server tests
         working-directory: mcp
         run: |
