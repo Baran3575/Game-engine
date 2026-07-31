@@ -1,0 +1,14 @@
+{
+  "name": "webstruckd-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for the Game Engine Studio web app. Exposes the running browser game as tools for AI agents.",
+  "private": true,
+  "bin": { "webstruckd-mcp": "server.js" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

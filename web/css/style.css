@@ -1,0 +1,92 @@
+:root {
+  --bg: #17181c;
+  --panel: #1f2128;
+  --panel2: #262932;
+  --border: #33363f;
+  --text: #e6e7ea;
+  --muted: #9aa0ab;
+  --accent: #4f8cff;
+  --accent2: #2bd36f;
+  --danger: #e5534b;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--border);
+}
+.brand { font-weight: 700; letter-spacing: 0.3px; margin-right: 8px; }
+.spacer { flex: 1; }
+button, select {
+  background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button.accent { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
+.status { font-size: 12px; color: var(--muted); }
+.status.on { color: var(--accent2); }
+
+#tabs { display: flex; gap: 2px; padding: 6px 12px 0; background: var(--panel); border-bottom: 1px solid var(--border); }
+.tab { border-bottom: none; border-radius: 6px 6px 0 0; color: var(--muted); }
+.tab.active { color: var(--text); border-color: var(--accent); background: var(--bg); }
+
+main { flex: 1; min-height: 0; }
+.panel { display: none; height: 100%; }
+.panel.active { display: flex; }
+
+#panel-scene { flex-direction: row; }
+#inspector {
+  width: 250px; flex: none; background: var(--panel); border-right: 1px solid var(--border);
+  padding: 10px; overflow-y: auto;
+}
+#inspector h3 { margin: 10px 0 6px; font-size: 12px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.5px; }
+#inspector h3:first-child { margin-top: 0; }
+.hidden { display: none; }
+#obj-list { display: flex; flex-direction: column; gap: 4px; }
+#obj-list .obj {
+  text-align: left; background: var(--panel2); border: 1px solid var(--border);
+  padding: 6px 8px; border-radius: 6px; font-size: 13px; cursor: pointer;
+}
+#obj-list .obj.sel { border-color: var(--accent); }
+#obj-list .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.btn-row { display: flex; gap: 6px; margin-top: 8px; }
+.btn-row button { flex: 1; }
+#props { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; font-size: 12px; align-items: center; }
+#props input[type=number], #props input[type=text] {
+  width: 100%; background: var(--panel2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 5px; padding: 4px 6px;
+}
+#props input[type=color] { width: 40px; height: 26px; border: 1px solid var(--border); background: none; border-radius: 5px; padding: 0; }
+#props .label { color: var(--muted); }
+
+#scene-container { flex: 1; position: relative; min-width: 0; }
+#scene-container canvas { display: block; }
+#hint { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); color: var(--muted); font-size: 12px; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 12px; pointer-events: none; }
+
+#panel-blocks { position: relative; }
+#blocklyDiv { position: absolute; inset: 0; }
+
+#panel-scripts { flex-direction: column; }
+.script-bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+#script-input {
+  flex: 1; resize: none; border: none; background: var(--bg); color: var(--text);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px; line-height: 1.5; padding: 12px; outline: none;
+}
+
+#log {
+  height: 110px; overflow-y: auto; background: #101115; border-top: 1px solid var(--border);
+  font-family: Consolas, monospace; font-size: 12px; padding: 6px 12px; color: var(--muted);
+  white-space: pre-wrap;
+}
+#log .err { color: var(--danger); }

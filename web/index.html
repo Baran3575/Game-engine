@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Engine Studio - build 3D games in your browser</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header id="toolbar">
+  <span class="brand">Game Engine Studio</span>
+  <button id="btn-play" class="accent">&#9654; Play</button>
+  <button id="btn-stop">&#9632; Stop</button>
+  <span class="sep"></span>
+  <button id="btn-save">Save</button>
+  <select id="project-select" title="Projects"></select>
+  <button id="btn-new">New</button>
+  <button id="btn-delete">Delete</button>
+  <span class="spacer"></span>
+  <span id="bridge-status" class="status">MCP: offline</span>
+  <button id="btn-bridge-settings" title="MCP bridge settings">&#9881;</button>
+</header>
+
+<nav id="tabs">
+  <button class="tab active" data-tab="scene">Scene</button>
+  <button class="tab" data-tab="blocks">Block Code</button>
+  <button class="tab" data-tab="scripts">Scripts</button>
+</nav>
+
+<main>
+  <section id="panel-scene" class="panel active">
+    <aside id="inspector">
+      <h3>Scene</h3>
+      <div id="obj-list"></div>
+      <div class="btn-row">
+        <button id="add-box">+ Box</button>
+        <button id="add-sphere">+ Sphere</button>
+        <button id="add-cylinder">+ Cylinder</button>
+      </div>
+      <div class="btn-row">
+        <button id="btn-dup">Duplicate</button>
+        <button id="btn-del">Delete</button>
+      </div>
+      <h3 id="props-title" class="hidden">Properties</h3>
+      <div id="props"></div>
+    </aside>
+    <div id="scene-container">
+      <div id="hint">Drag to orbit &middot; scroll to zoom &middot; right-drag to pan</div>
+    </div>
+  </section>
+
+  <section id="panel-blocks" class="panel">
+    <div id="blocklyDiv"></div>
+  </section>
+
+  <section id="panel-scripts" class="panel">
+    <div class="script-bar">
+      <button id="btn-run-script">Run Script (now)</button>
+      <span>Scripts run together with block code when you press Play.</span>
+    </div>
+    <textarea id="script-input" spellcheck="false" autocomplete="off"></textarea>
+  </section>
+</main>
+
+<div id="log"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@9.3.3/blockly.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@9.3.3/blocks_compressed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@9.3.3/javascript_compressed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@9.3.3/msg/en.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/blocks.js"></script>
+<script src="js/bridge.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
